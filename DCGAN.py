@@ -255,8 +255,8 @@ d_vars = [var for var in tvars if 'd_' in var.name]
 g_vars = [var for var in tvars if 'g_' in var.name]
 
 
-D_solver = tf.train.AdamOptimizer().minimize(D_loss, var_list=d_vars)  # only updates the discriminator vars
-G_solver = tf.train.AdamOptimizer().minimize(G_loss, var_list=g_vars)  # only updates the generator vars
+D_solver = tf.train.AdamOptimizer(0.000001).minimize(D_loss, var_list=d_vars)  # only updates the discriminator vars
+G_solver = tf.train.AdamOptimizer(0.00005).minimize(G_loss, var_list=g_vars)  # only updates the generator vars
 
 # -------------- TensorBoard summaries -----------------
 
@@ -275,9 +275,7 @@ summ_G_loss = tf.summary.scalar("G_loss", G_loss)
 #utils.maybe_download(FLAGS.input_path, FLAGS.mnist)
 
 # import mnist dataset
-
-# data = input_data.read_data_sets('/home/turion91/Desktop/fashion_police/', one_hot=True)
-data = input_data.read_data_sets('data/fashion', source_url='http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/', one_hot=True)
+data = input_data.read_data_sets('/home/adriano/fashion/NN_backup/NetworksTutorials/', one_hot=True)
 
 
 # -------------- Train models ------------------------
@@ -294,11 +292,14 @@ sess.run(tf.global_variables_initializer())
 
 # create summary writer
 summary_writer = tf.summary.FileWriter(FLAGS.log_path, graph=tf.get_default_graph())
-
+start_time = time.time()
 for i in range(FLAGS.train_steps):
 
   # eventually plot images that are being generated
-    if i % 10 == 0:
+    if i % 10000 == 0:
+        samples = sess.run(Gz, feed_dict={z: sample_Z()})
+        save_plot(samples, FLAGS.output_path, i)
+    if i == FLAGS.train_steps-1:
         samples = sess.run(Gz, feed_dict={z: sample_Z()})
         save_plot(samples, FLAGS.output_path, i)
 #
@@ -314,8 +315,11 @@ for i in range(FLAGS.train_steps):
     summary_writer.add_summary(summ, i)
 
   # eventually print train losses
-    if i % 10 == 0:
+    if i % 10000 == 0:
         print('Iter: {}'.format(i))
         print(D_loss_curr)
         print(G_loss_curr)
         print()
+end_time = time.time()
+delta_t = end_time - start_time
+print(timedelta(seconds=int(round(delta_t))))
